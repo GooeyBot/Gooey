@@ -5,11 +5,11 @@ class CommentStream:
     def __init__(self, reddit, config):
         self.reddit = reddit
         self.config = config
-
         self.action_kwargs = self.config['action']['kwargs']
 
-        fn_name     = 'cmd_' + self.config['action']['name']
-        self.fn     = getattr(self, fn_name)
+        # TODO: Consider refactoring to work more like Economy class (support multiple commands)
+        self.fn_attributes = self.config['comment_stream_commands'][0]
+        self.fn = getattr(self, 'cmd_' + self.fn_attributes['name'])
 
         if self.fn is None:
             raise FunctionNotAllowed('Function "{}" not allowed'.format(fn_name))
@@ -24,16 +24,25 @@ class CommentStream:
         print(comment.body)
 
     def cmd_reply(self, comment):
-        comment.reply(self.config['comment_reply_body'])
+        trigger = self.fn_attributes['contains'] 
+        body = comment.body
+
+        if not self.fn_attributes['case_sensitive']:
+            trigger = trigger.lower()
+            body = body.lower()
+
+        if trigger not in body:
+            return
+            
+        reply_body = self.fn_attributes['comment_reply_body']
+        comment.reply(reply_body)
 
     def cmd_add_user_flair(self, comment):
-        if not self.config['comment_author_flair_condition']:
-            return 
-
         redditor = comment.author
         attributes = self.config['comment_flair_attributes']
         redditor.mod.flair(attributes)
 
+    # TODO: The below functions are currently not used, should be refactored as above
     def cmd_find_command(self, comment):
         for command in self.config['comment_commands']:
             if command['case_insensitive'] == True:
@@ -46,5 +55,5 @@ class CommentStream:
             if command_text in comment_body:
                 self.cmd_call_command_function(comment, command)
 
-    def cmd_call_command_function(self, comment, command_attributes):
+    def cmd_call_command_function(self, comment):
         raise NotImplementedError

@@ -22,7 +22,7 @@ jobs:
       - python/install-deps
       - python/save-cache
       - run:
-          command: python -m autopep8 . --diff --recursive --exit-code --exclude 'venv'
+          command: python -m autopep8 . --diff --recursive --exit-code --global-config project.toml
           name: Lint
 
 workflows:

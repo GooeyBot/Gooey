@@ -85,7 +85,7 @@ class BotConfigBuilder:
         arranged_data = {command_list: []}
 
         for key in form_data:
-            if key == 'command_container':
+            if key == 'command_container' or '_type' in key:
                 continue
 
             function_name, new_key = key.split('-')
@@ -97,7 +97,7 @@ class BotConfigBuilder:
                         value = len(form_data[key]) > 0
                     else:
                         value = form_data[key]
-                    datum[new_key] = value
+                    datum[new_key] = BotConfigBuilder.coerce_data_to_correct_type(value, key, form_data)
                     function_already_present = True
                     continue
 
@@ -179,6 +179,27 @@ class BotConfigBuilder:
     def is_enabled(command):
         return 'is_enabled_boolean' in command.keys() and command['is_enabled_boolean']
 
+    @staticmethod
+    def coerce_data_to_correct_type(value, function_name, fields):
+        # Attempt to coerce data to the correct type given the form's hidden fields
+        if 'is_enabled' in function_name:
+            return value
+
+        try:
+            coercion_functions = {
+                'string': str,
+                'integer': coerce_to_int,
+                'float': float
+            }
+
+            function_type_name = '{}_type'.format(function_name)
+            function_type = fields[function_type_name]
+            coercion_fn = coercion_functions[function_type]
+
+            return coercion_fn(value)
+        except Exception as e:
+            return value
+
 
 def titleize_snake_case(text, spaces=False):
     delimiter = ' ' if spaces else ''
@@ -187,3 +208,10 @@ def titleize_snake_case(text, spaces=False):
 
 def remove_boolean(text):
     return re.sub('Boolean', '', text)
+
+
+def coerce_to_int(value):
+    try:
+        return int(float(value))
+    except:
+        return value

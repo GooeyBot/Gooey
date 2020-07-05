@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app
-from app.forms import BaseBotForm, EditEconomyBotForm, ActionForm, ActionFormLoader
+from app.forms import BaseBotForm, EditEconomyBotForm, ActionFormLoader
 from app.utils import BotConfigBuilder, FormSelector, ConfigAlreadyExists
 
 
@@ -42,7 +42,7 @@ def new():
 @app.route('/delete', methods=['GET'])
 def delete():
     if not BotConfigBuilder.config_already_exists():
-        flash('Bot configuration does not exist.')
+        flash('Bot configuration does not exist.', 'danger')
         return redirect(url_for('index'))
 
     BotConfigBuilder.delete_bot_config()

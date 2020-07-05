@@ -8,10 +8,6 @@ import json
 SCHEMA_PATH = os.path.abspath('./app/static/form_schema.json')
 
 
-class ActionForm(FlaskForm):
-    pass
-
-
 class BaseBotForm(FlaskForm):
 
     VALID_BOT_TYPES = ['economy']
@@ -43,7 +39,8 @@ class ActionFormLoader:
     FIELD_TYPES = {
         'string': StringField,
         'boolean': BooleanField,
-        'integer': IntegerField
+        'integer': IntegerField,
+        'float': FloatField
     }
 
     def __init__(self, form_class):
@@ -51,16 +48,22 @@ class ActionFormLoader:
         self.HANDLER_CONTAINER = form_class.HANDLER_CONTAINER
 
     def load_action_fields(self):
+        # Load the JSON schema
         with open(SCHEMA_PATH) as file:
             json_file = json.load(file)
             schema = json_file[self.HANDLER_CONTAINER]
 
+        # Iterate through the functions
         for function in schema:
+            # Titleize the function name
             titleized_fn_name = titleize_snake_case(function['function_name'])
+            # Build an ActionForm for the function
             function_subform_class = type('{}ActionForm'.format(
                 titleized_fn_name), (FlaskForm, ), {})
 
+            # Iterate through the values
             for field in function.keys():
+                # Skip anything that doesn't have a valid field type
                 value = function[field]
                 if value not in self.FIELD_TYPES:
                     continue
@@ -68,10 +71,18 @@ class ActionFormLoader:
                     titleized_field_name = titleize_snake_case(
                         field, spaces=True)
                     field_name = remove_boolean(titleized_field_name)
+                    # Create an instance of the correct form given the built field name
                     field_instance = self.FIELD_TYPES[value](field_name)
+                    # Set the function field to the ActionForm
                     setattr(function_subform_class, field, field_instance)
+                    # Set the hidden field type for serializing data to JSON
+                    hidden_field_name = '{}_type'.format(field)
+                    hidden_field = HiddenField(hidden_field_name, default=value)
+                    setattr(function_subform_class, hidden_field_name, hidden_field)
 
+            # Set a BooleanField to enable the function
             setattr(function_subform_class, 'is_enabled_boolean',
                     BooleanField('Enabled'))
             field_list = FormField(function_subform_class)
+            # Set the entire field list to the initial form
             setattr(self.form_class, function['function_name'], field_list)

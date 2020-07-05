@@ -27,7 +27,7 @@ class TestDelete(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Bot configuration was deleted successfully.', response.data)
         self.assertTrue(os.path.isfile(self.CONFIG_PATH))
-        
+
         with open(self.CONFIG_PATH, 'r') as file:
             config_data = json.load(file)
 
@@ -39,7 +39,7 @@ class TestDelete(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Bot configuration does not exist.', response.data)
         self.assertTrue(os.path.isfile(self.CONFIG_PATH))
-        
+
         with open(self.CONFIG_PATH, 'r') as file:
             config_data = json.load(file)
 
